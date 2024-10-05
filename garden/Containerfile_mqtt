@@ -1,0 +1,21 @@
+FROM python:3.11-alpine as BUILD
+
+WORKDIR /app
+
+COPY requirements.txt /app/
+RUN apk add --no-cache build-base python3-dev g++ libffi-dev openssl-dev
+
+RUN pip install --no-cache-dir paho-mqtt
+
+FROM python:3.11-alpine as PROD
+
+COPY --from=BUILD  /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=BUILD /usr/local/bin /usr/local/bin
+
+WORKDIR /app/
+
+COPY . /app/
+
+EXPOSE 8082
+
+ENTRYPOINT ["python"]

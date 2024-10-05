@@ -1,0 +1,84 @@
+version: "3"
+
+services:
+
+  controller:
+    build: 
+      context: ./garden
+      dockerfile: DockerController
+    command: mainController.py
+    volumes: 
+      - ./garden/planning:/planning
+    ports:
+      - "5000:5000"
+    deploy:
+      replicas: 1
+    depends_on:
+      - mosquitto
+    networks:
+      - garden-network
+  
+  publisher:
+    build: 
+      context: ./garden
+      dockerfile: Containerfile_mqtt
+    command: publisher.py
+    deploy:
+      replicas: 0
+    depends_on:
+      - mosquitto
+    networks:
+      - garden-network
+
+  subscriber:
+    build: 
+      context: ./garden
+      dockerfile: Containerfile_mqtt
+    command: subscriber.py
+    deploy:
+      replicas: 1
+    depends_on:
+      - mosquitto
+    networks:
+      - garden-network
+      
+  mosquitto:
+    image: eclipse-mosquitto
+    hostname: mosquitto
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      - garden-network
+    volumes:
+#      - ./mosquitto:/etc/mosquitto
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  influxdb:
+    image: influxdb
+    volumes:
+      # Mount for influxdb data directory and configuration
+      - ./influx/influxdb.bolt:/var/lib/influxdb2/influxd.bolt:rw
+      - influxdbv2:/var/lib/influxdb2:rw
+    ports:
+      - "8086:8086"
+    networks:
+      - garden-network
+  
+  telegraf:
+    image: telegraf:1.25-alpine
+    depends_on:
+      - influxdb
+    volumes:
+      # Mount for telegraf config
+      - ./telegraf/mytelegraf.conf:/etc/telegraf/telegraf.conf:ro
+    networks:
+      - garden-network
+
+networks:
+  garden-network:
+
+volumes:
+  influxdbv2:

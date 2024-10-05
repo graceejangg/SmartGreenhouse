@@ -1,0 +1,7 @@
+(define (problem smart-garden)
+    (:domain smart-garden)
+    (:requirements :negative-preconditions :typing)
+    (:objects humidity - humidity-sensor light - light-sensor moisture - moisture-sensor temperature - temperature-sensor)
+    (:init (sensor-value-low light))
+    (:goal (and (dummy-goal-achieved) (sensor-value-normal light)))
+)
